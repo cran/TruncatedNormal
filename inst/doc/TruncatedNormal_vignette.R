@@ -74,7 +74,7 @@ nusq <- 10000; # prior scale parameter
 C <- solve(diag(d)/nusq + crossprod(X))
 sigma <- diag(n) + nusq*tcrossprod(X) # this is covariance of Z given beta
 est <- pmvnorm(sigma = sigma, lb = 0) 
-# estimate acceptance probability of Crude Monte Carlo
+# estimate acceptance probability of crude Monte Carlo
 print(attributes(est)$upbnd/est[1])
 # reciprocal of acceptance probability
 Z <- rtmvnorm(sigma = sigma, n = 1e3, lb = rep(0, n))

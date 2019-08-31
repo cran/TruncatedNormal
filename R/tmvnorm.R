@@ -37,7 +37,31 @@
 #' samp <- rtmvnorm(n = 10, mu = mu, sigma = sigma, lb = lb)
 #' loglik <- dtmvnorm(samp, mu = mu, sigma = sigma, lb = lb, log = TRUE)
 #' cdf <- ptmvnorm(samp, mu = mu, sigma = sigma, lb = lb, log = TRUE, type = "q")
-
+#' 
+#' # Exact Bayesian Posterior Simulation Example
+#' # Vignette, example 5
+#' \dontrun{
+#' data("lupus"); # load lupus data
+#' Y <- lupus[,1]; # response data
+#' X <- as.matrix(lupus[,-1])  # construct design matrix
+#' n <- nrow(X)
+#' d <- ncol(X)
+#' X <- diag(2*Y-1) %*% X; # incorporate response into design matrix
+#' nusq <- 10000; # prior scale parameter
+#' C <- solve(diag(d)/nusq + crossprod(X))
+#' sigma <- diag(n) + nusq*tcrossprod(X) # this is covariance of Z given beta
+#' est <- pmvnorm(sigma = sigma, lb = 0) 
+#' # estimate acceptance probability of crude Monte Carlo
+#' print(attributes(est)$upbnd/est[1])
+#' # reciprocal of acceptance probability
+#' Z <- rtmvnorm(sigma = sigma, n = 1e3, lb = rep(0, n))
+#' # sample exactly from auxiliary distribution
+#' beta <- rtmvnorm(n = nrow(Z), sigma = C) + Z %*% X %*% C
+#' # simulate beta given Z and plot boxplots of marginals
+#' boxplot(beta, ylab = expression(beta))
+#' # output the posterior means
+#' colMeans(beta)
+#' }
 NULL
 
 #' Density function for the truncated multivariate normal distribution
@@ -163,10 +187,35 @@ rtmvnorm <- function(n, mu, sigma, lb, ub){
   if(missing(ub)){
     ub <- rep(Inf, d) 
   }
-  if(n == 1){
-    as.vector(mvrandn(l = lb, u = ub, Sig = sigma, n = n, mu = mu)) 
+  stopifnot(length(lb) == length(ub), length(lb) == d, lb <= ub)
+  if(!any((ub - lb) < 1e-10)){
+    if(n == 1){
+      as.vector(mvrandn(l = lb, u = ub, Sig = sigma, n = n, mu = mu)) 
+    } else{
+      t(mvrandn(l = lb, u = ub, Sig = sigma, n = n, mu = mu))
+    }
   } else{
-    t(mvrandn(l = lb, u = ub, Sig = sigma, n = n, mu = mu))
+    warning("Some variables have a degenerate distribution.")
+    ind <- which((ub - lb) >= 1e-10)
+    # check covariance matrix
+    stopifnot(isSymmetric(sigma), all(eigen(sigma, only.values = TRUE)$value > 0))
+    # compute conditional Gaussian
+      schurcomp <- function(sigma, ind) {
+        stopifnot(c(length(ind) > 0, ncol(sigma) - length(ind) > 0))
+        sigma[ind, ind, drop = FALSE] - sigma[ind, -ind, drop = FALSE] %*%
+          solve(sigma[-ind, -ind, drop = FALSE]) %*% sigma[-ind, ind, drop = FALSE]
+      }  
+      sigmap <- schurcomp(sigma, ind)
+      mup <- c(mu[ind] + sigma[ind, -ind, drop = FALSE] %*% solve(sigma[-ind, -ind, drop = FALSE]) %*% (lb[-ind] - mu[-ind]))
+      #
+      res <- matrix(0, nrow = n, ncol = d)
+      res[, -ind] <- rep(lb[-ind], each = n)
+    if(n == 1){
+      res[, ind] <- as.vector(mvrandn(l = lb[ind], u = ub[ind], Sig = sigmap, n = n, mu = mup)) 
+      return(as.vector(res))
+    } else{
+      res[, ind] <- t(mvrandn(l = lb[ind], u = ub[ind], Sig = sigmap, n = n, mu = mup))
+    }
   }
 }
 
