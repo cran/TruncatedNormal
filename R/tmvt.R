@@ -25,7 +25,7 @@
 #' @param n number of observations
 #' @param x,q vector or matrix of quantiles
 #' @param B number of replications for the (quasi)-Monte Carlo scheme
-#' @param log logical; if \code{TRUE}, probabilites and density are given on the log scale.
+#' @param log logical; if \code{TRUE}, probabilities and density are given on the log scale.
 #' @param mu vector of location parameters
 #' @param sigma scale matrix
 #' @param df degrees of freedom
@@ -142,7 +142,7 @@ ptmvt <- function(q, mu, sigma, df, lb, ub, type = c("mc", "qmc"), log = FALSE, 
   
   for(i in 1:nrow(q)){
     if(any(q[i,] > ub) || any(q[i,] < lb)){
-      prob[i] <- NA
+      prob[i] <- 0
     } else{
       prob[i] <- switch(type,
                         mc = mvTcdf(l = lb - mu, u = q[i,] - mu, df = df, Sig = sigma, n = B)$prob,

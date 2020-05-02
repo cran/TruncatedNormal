@@ -1,4 +1,4 @@
-## ---- include = FALSE----------------------------------------------------
+## ---- include = FALSE---------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -7,12 +7,12 @@ knitr::opts_chunk$set(
   fig.height = 5
 )
 
-## ----setup, echo = FALSE-------------------------------------------------
+## ----setup, echo = FALSE------------------------------------------------------
 library(TruncatedNormal)
 par( bty = "l", pch = 20, xaxs = "i", yaxs = "i")
 set.seed(0)
 
-## ----simutrunc-----------------------------------------------------------
+## ----simutrunc----------------------------------------------------------------
 library(TruncatedNormal)
 set.seed(1234)
 sigma <- matrix(c(1,0.9,0.9,1), ncol = 2)
@@ -28,7 +28,7 @@ plot(X, panel.first = abline(a = 6, b = 1, col = 2),
 # Compare with unconstrained samples
 points(rtmvnorm(n=1e2, mu = mu, sigma = sigma), col = 4) 
 
-## ----rareproba-----------------------------------------------------------
+## ----rareproba----------------------------------------------------------------
 d <- 1000
 sigma <- 0.5 * (diag(d) + matrix(1, d, d))
 est <- pmvnorm(sigma = sigma, lb = rep(0, d), type = "qmc", B = 1e4)
@@ -38,7 +38,7 @@ abs(est - 1/(d+1))*(d+1)
 
 
 
-## ----highdim,  fig.align="center", fig.width = 5, fig.height = 5---------
+## ----highdim,  fig.align="center", fig.width = 5, fig.height = 5--------------
 d <- 60
 sigma <- 0.1 * diag(d) + 0.9 * matrix(1, d, d)
 l <- (1:d)/(4*d); u <- l + 2
@@ -47,7 +47,7 @@ boxplot(t(X) ~ as.factor(1:d), xlab = "dimension index",
         ylab = expression(X["i"]))
 
 
-## ----normqprec-----------------------------------------------------------
+## ----normqprec----------------------------------------------------------------
 l <- 9; u <- 9.5
 hist(rtnorm(n = 1e4, lb = l, ub = u), 
      xlim = c(9,9.5), xaxs = "i", main = "", xlab = "x")
@@ -61,7 +61,7 @@ for(i in 1:20){
 }
 colMeans(timing)
 
-## ----probitneph----------------------------------------------------------
+## ----probitneph---------------------------------------------------------------
 # Exact Bayesian Posterior Simulation Example.
 
 data("lupus"); # load lupus data
@@ -86,15 +86,11 @@ boxplot(beta, ylab = expression(beta))
 print(colMeans(beta)) # output the posterior means
  
 
-## ----tobit---------------------------------------------------------------
-
+## ----tobit--------------------------------------------------------------------
+data(mroz, package = "TruncatedNormal")
 #Censored observations denote Yc, Yu for uncensored
-women <- read.csv("https://www.stern.nyu.edu/~wgreene/Text/Edition7/TableF5-1.csv", 
-                   header = TRUE)[,c(2:7,19)]
-Y <- women[,"WHRS"]
-X <- cbind(1, as.matrix(women[,-1]), I(women[,"AX"]^2))
-colnames(X) <- c("intercept", "kidslt6","kidsge6",
-                 "age","educ","hinc","exp","sqexp")
+Y <- mroz[,"whrs"]
+X <- cbind(1, as.matrix(mroz[,-1]), I(mroz[,"exp"]^2))
 n <- nrow(X); d <- ncol(X)
 uncens <- Y > 0
 Yu <- Y[uncens]; Yc <- Y[!uncens]
