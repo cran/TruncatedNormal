@@ -67,20 +67,46 @@ mvNqmc <- function(l, u, Sig, n = 1e5){
     diag(L) <- rep(0, d) # remove diagonal
   # find optimal tilting parameter via non-linear equation solver
   x0 <- rep(0, 2 * length(l) - 2)
-  solvneq <- nleqslv::nleqslv(x0, fn = gradpsi, jac = jacpsi,
-                              L = L, l = l, u = u, global = "pwldog", method = "Broyden",
+  solvneq <- nleqslv::nleqslv(x0, 
+                              fn = gradpsi, 
+                              jac = jacpsi,
+                              L = L, l = l, u = u, 
+                              global = "pwldog", 
+                              method = "Newton",
                               control = list(maxit = 500L))
   xmu <- solvneq$x
   exitflag <- solvneq$termcd
-  if(!(exitflag %in% 1:2) || !isTRUE(all.equal(solvneq$fvec, rep(0, length(x0)), tolerance = 1e-6))){
-    warning('Did not find a solution to the nonlinear system in `mvNqmcQ`!')
+  flag <- TRUE
+  if(!(exitflag %in% c(1,2)) || !isTRUE(all.equal(solvneq$fvec, rep(0, length(x0)), tolerance = 1e-6))){
+    flag <- FALSE
   }
   # assign saddlepoint x* and mu*
   x <- xmu[1:(d-1)]
   mu <- xmu[d:(2*d-2)] 
-  # check the KKT conditions
-  if(any((out$L %*% c(x, 0) - out$u) > 0, (-out$L %*% c(x, 0) + out$l) > 0)){
-   stop("Solution to exponential tilting problem using Powell's dogleg method \n  does not lie in convex set l < Lx < u. Aborting")
+  # check the constraints
+  if(any((out$L %*% c(x,0) - out$u)[-d] > 0, (-out$L %*% c(x,0) + out$l)[-d] > 0)){
+   warning("Solution to exponential tilting problem using Powell's dogleg method \n  does not lie in convex set l < Lx < u.")
+   flag <- FALSE
+  }
+  # If Powell dogleg method fails, try constrained convex solver
+  if(!flag){
+    solvneqc <- alabama::auglag(par = xmu,
+                    fn = function(par, l=l, L=L, u=u){
+                      ps <- try(-psy(x = c(par[1:(d-1)],0), mu = c(par[d:(2*d-2)],0),
+                                     l = l, L = L, u = u))
+                      return(ifelse(is.character(ps), -1e10, ps))},
+                    gr = function(x, l=l, L=L, u=u){gradpsi(y=x, L=L,l=l, u=u)},
+                    L=L, l=l, u=u,
+                    # equality constraints d psi/d mu = 0
+                  heq = function(x, l, L, u){gradpsi(y = x, l=l, L=L, u = u)[d:(2*d-2)]},
+                  hin= function(par,...){c((out$u - out$L %*% c(par[1:(d-1)],0))[-d] > 0, (out$L %*% c(par[1:(d-1)],0) - out$l)[-d])},
+                  control.outer = list(trace = FALSE,method="nlminb"))
+    if(solvneqc$convergence == 0){
+      x <- solvneqc$par[1:(d-1)]
+      mu <- solvneqc$par[d:(2*d-2)] 
+    } else{
+      stop('Did not find a solution to the nonlinear system in `mvNqmc`!') 
+    }
   }
   p <- rep(0, 12)
   for (i in 1:12){ # repeat randomized QMC
