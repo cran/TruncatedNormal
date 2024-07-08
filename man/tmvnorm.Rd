@@ -20,6 +20,10 @@
 
 \item{ub}{vector of upper truncation limits}
 
+\item{check}{logical; if \code{TRUE} (default), the code checks that the scale matrix \code{sigma} is positive definite and symmetric}
+
+\item{...}{additional arguments, currently ignored}
+
 \item{type}{string, either of \code{mc} or \code{qmc} for Monte Carlo and quasi Monte Carlo, respectively}
 }
 \value{
@@ -27,7 +31,7 @@
 }
 \description{
 Density, distribution function and random generation for the multivariate truncated normal distribution
-with mean vector \code{mu}, covariance matrix \code{sigma}, lower truncation limit \code{lb} and upper truncation limit \code{ub}. 
+with mean vector \code{mu}, covariance matrix \code{sigma}, lower truncation limit \code{lb} and upper truncation limit \code{ub}.
 The truncation limits can include infinite values. The Monte Carlo (\code{type = "mc"}) uses a sample of size \code{B}, while the
 quasi Monte Carlo (\code{type = "qmc"}) uses a pointset of size \code{ceiling(n/12)} and estimates the relative error using 12 independent randomized QMC estimators.
 }
@@ -58,7 +62,7 @@ X <- diag(2*Y-1) \%*\% X; # incorporate response into design matrix
 nusq <- 10000; # prior scale parameter
 C <- solve(diag(d)/nusq + crossprod(X))
 sigma <- diag(n) + nusq*tcrossprod(X) # this is covariance of Z given beta
-est <- pmvnorm(sigma = sigma, lb = 0) 
+est <- pmvnorm(sigma = sigma, lb = 0)
 # estimate acceptance probability of crude Monte Carlo
 print(attributes(est)$upbnd/est[1])
 # reciprocal of acceptance probability

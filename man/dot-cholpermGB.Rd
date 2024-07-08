@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{.cholpermGB}
 \alias{.cholpermGB}
-\title{Cholesky matrix decomposition with GGE ordering}
+\title{Cholesky matrix decomposition with GB ordering}
 \usage{
 .cholpermGB(Sigma, l, u)
 }
@@ -16,10 +16,10 @@
 \value{
 a list with components
 \itemize{
-\item{\code{L}: }{Cholesky root}
-\item{\code{l}: }{permuted vector of lower bounds}
-\item{\code{u}: }{permuted vector of upper bounds}
-\item{\code{perm}: }{vector of integers with ordering of permutation}
+\item \code{L}: Cholesky root
+\item \code{l}: permuted vector of lower bounds
+\item \code{u}: permuted vector of upper bounds
+\item \code{perm}: vector of integers with ordering of permutation
 }
 }
 \description{
